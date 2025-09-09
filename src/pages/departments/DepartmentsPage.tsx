@@ -183,7 +183,7 @@ const DepartmentsPage: React.FC = () => {
               </Avatar>
               <Box>
                 <Typography variant="h6">
-                  {departments.filter(d => d.status === 'active').length}
+                  {departments.filter(d => d.active).length}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Active Departments
@@ -217,7 +217,7 @@ const DepartmentsPage: React.FC = () => {
               </Avatar>
               <Box>
                 <Typography variant="h6">
-                  {departments.reduce((sum, d) => sum + (d.total_courses || 0), 0)}
+                  {departments.length}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Total Courses
@@ -333,7 +333,7 @@ const DepartmentsPage: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={department.total_courses || 0 || 0}
+                      label="N/A"
                       size="small"
                       color="secondary"
                       variant="outlined"
@@ -341,7 +341,7 @@ const DepartmentsPage: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={department.total_students || 0 || 0}
+                      label="N/A"
                       size="small"
                       color="info"
                       variant="outlined"
@@ -349,16 +349,13 @@ const DepartmentsPage: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={department.status || "active".toUpperCase()}
-                      color={getStatusColor(department.status || "active") as any}
+                      label={department.active ? "ACTIVE" : "INACTIVE"}
+                      color={department.active ? "success" : "error"}
                       size="small"
                     />
                   </TableCell>
                   <TableCell>
-                    {department.established_date || "" 
-                      ? new Date(department.established_date || "").getFullYear()
-                      : 'N/A'
-                    }
+                    N/A
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 1 }}>

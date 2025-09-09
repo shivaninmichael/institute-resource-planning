@@ -171,6 +171,7 @@ const LoginPage: React.FC = () => {
                 >
                   <MenuItem value="student">Student</MenuItem>
                   <MenuItem value="teacher">Teacher</MenuItem>
+                  <MenuItem value="parent">Parent</MenuItem>
                   <MenuItem value="admin">Administrator</MenuItem>
                 </Select>
               </FormControl>

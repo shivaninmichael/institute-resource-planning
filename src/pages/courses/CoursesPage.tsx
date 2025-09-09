@@ -52,8 +52,8 @@ const CoursesPage: React.FC = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<CourseStatus | 'all'>('all');
-  const [levelFilter, setLevelFilter] = useState<CourseLevel | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'all'>('all');
+  const [levelFilter, setLevelFilter] = useState<string>('all');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
 
@@ -70,19 +70,20 @@ const CoursesPage: React.FC = () => {
         .select(`
           *,
           departments!inner(*),
-          program_levels!inner(*)
+          programs!inner(*)
         `)
         .range(page * rowsPerPage, (page + 1) * rowsPerPage - 1);
 
       // Apply filters
       if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+        query = query.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
       }
       if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
+        query = query.eq('active', statusFilter === 'active');
       }
       if (levelFilter !== 'all') {
-        query = query.eq('level', levelFilter);
+        // Filter by program level through the programs relationship
+        query = query.eq('programs.program_level_id', levelFilter);
       }
 
       const { data, error, count } = await query;
@@ -199,7 +200,7 @@ const CoursesPage: React.FC = () => {
               </Avatar>
               <Box>
                 <Typography variant="h6">
-                  {courses.filter(c => c.status === 'active').length}
+                  {courses.filter(c => c.active).length}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Active Courses
@@ -216,7 +217,7 @@ const CoursesPage: React.FC = () => {
               </Avatar>
               <Box>
                 <Typography variant="h6">
-                  {courses.filter(c => c.status === 'inactive').length}
+                  {courses.filter(c => !c.active).length}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Draft Courses
@@ -266,12 +267,11 @@ const CoursesPage: React.FC = () => {
                 <Select
                   value={statusFilter}
                   label="Status"
-                  onChange={(e) => setStatusFilter(e.target.value as CourseStatus | 'all')}
+                  onChange={(e) => setStatusFilter(e.target.value as 'active' | 'inactive' | 'all')}
                 >
                   <MenuItem value="all">All Status</MenuItem>
                   <MenuItem value="active">Active</MenuItem>
                   <MenuItem value="inactive">Inactive</MenuItem>
-                  <MenuItem value="completed">Completed</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -281,13 +281,14 @@ const CoursesPage: React.FC = () => {
                 <Select
                   value={levelFilter}
                   label="Level"
-                  onChange={(e) => setLevelFilter(e.target.value as CourseLevel | 'all')}
+                  onChange={(e) => setLevelFilter(e.target.value as string)}
                 >
                   <MenuItem value="all">All Levels</MenuItem>
-                  <MenuItem value="beginner">Beginner</MenuItem>
-                  <MenuItem value="intermediate">Intermediate</MenuItem>
-                  <MenuItem value="advanced">Advanced</MenuItem>
-                  <MenuItem value="expert">Expert</MenuItem>
+                  <MenuItem value="1">Undergraduate</MenuItem>
+                  <MenuItem value="2">Postgraduate</MenuItem>
+                  <MenuItem value="3">Diploma</MenuItem>
+                  <MenuItem value="4">Certificate</MenuItem>
+                  <MenuItem value="5">PhD</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -314,16 +315,32 @@ const CoursesPage: React.FC = () => {
                 <TableCell>Course Code</TableCell>
                 <TableCell>Course Name</TableCell>
                 <TableCell>Department</TableCell>
-                <TableCell>Level</TableCell>
-                <TableCell>Credits</TableCell>
-                <TableCell>Duration</TableCell>
+                <TableCell>Program</TableCell>
+                <TableCell>Max Units</TableCell>
+                <TableCell>Min Units</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell>Enrolled</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {courses.map((course) => (
+              {courses.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="h6" color="text.secondary" gutterBottom>
+                        No courses found
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {searchTerm || statusFilter !== 'all' || levelFilter !== 'all' 
+                          ? 'Try adjusting your search filters' 
+                          : 'Create your first course to get started'
+                        }
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                courses.map((course) => (
                 <TableRow key={course.id} hover>
                   <TableCell>
                     <Typography variant="body1" fontWeight="medium">
@@ -340,36 +357,26 @@ const CoursesPage: React.FC = () => {
                       </Typography>
                     </Box>
                   </TableCell>
-                  <TableCell>{course.department?.name || ""}</TableCell>
+                  <TableCell>{course.departments?.name || "N/A"}</TableCell>
                   <TableCell>
                     <Chip
-                      label={course.level || "beginner".toUpperCase()}
+                      label={course.programs?.name || "N/A"}
                       size="small"
                       sx={{
-                        backgroundColor: getLevelColor(course.level || "beginner") + '20',
-                        color: getLevelColor(course.level || "beginner"),
+                        backgroundColor: '#e3f2fd',
+                        color: '#1976d2',
                         fontWeight: 'medium',
                       }}
                     />
                   </TableCell>
-                  <TableCell>{course.credits || 0}</TableCell>
-                  <TableCell>{course.duration_hours || 0}h</TableCell>
+                  <TableCell>{course.max_unit_load || 0}</TableCell>
+                  <TableCell>{course.min_unit_load || 0}</TableCell>
                   <TableCell>
                     <Chip
-                      label={(course.status || "active").toUpperCase()}
-                      color={getStatusColor(course.status || "active") as any}
+                      label={course.active ? "ACTIVE" : "INACTIVE"}
+                      color={course.active ? "success" : "error"}
                       size="small"
                     />
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="body2">
-                        {course.enrolled_students || 0 || 0}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        / {course.max_students || 0 || '∞'}
-                      </Typography>
-                    </Box>
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 1 }}>
@@ -399,7 +406,8 @@ const CoursesPage: React.FC = () => {
                     </Box>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

@@ -289,8 +289,8 @@ const FacultyPage: React.FC = () => {
                   <TableCell>{facultyMember.position || ""}</TableCell>
                   <TableCell>
                     <Chip
-                      label={facultyMember.status || "active".replace('_', ' ').toUpperCase()}
-                      color={getStatusColor(facultyMember.status || "active") as any}
+                      label={facultyMember.active ? "ACTIVE" : "INACTIVE"}
+                      color={facultyMember.active ? "success" : "error"}
                       size="small"
                     />
                   </TableCell>

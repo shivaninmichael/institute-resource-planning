@@ -3,7 +3,7 @@
 // Comprehensive type definitions for auth system
 // =====================================================
 
-export type UserRole = 'admin' | 'faculty' | 'student' | 'parent' | 'staff';
+export type UserRole = 'admin' | 'faculty' | 'student' | 'parent';
 
 export type PermissionAction = 'create' | 'read' | 'update' | 'delete' | 'manage';
 

@@ -65,13 +65,14 @@ export const StudentsPage: React.FC = () => {
     active: '',
   });
   const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     loadStudents();
-  }, [page, filters]);
+  }, [page, rowsPerPage, filters]);
 
   const loadStudents = async () => {
     try {
@@ -82,8 +83,7 @@ export const StudentsPage: React.FC = () => {
         .from('students')
         .select(`
           *,
-          users!inner(*),
-          courses!inner(*)
+          users!inner(*)
         `)
         .range(page * rowsPerPage, (page + 1) * rowsPerPage - 1);
 
@@ -91,14 +91,14 @@ export const StudentsPage: React.FC = () => {
       if (filters.search) {
         query = query.or(`first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,student_id.ilike.%${filters.search}%`);
       }
-      if (filters.gender) {
+      if (filters.gender && filters.gender !== '') {
         query = query.eq('gender', filters.gender);
       }
-      if (filters.category) {
+      if (filters.category && filters.category !== '') {
         query = query.eq('category', filters.category);
       }
-      if (filters.active !== undefined) {
-        query = query.eq('active', filters.active);
+      if (filters.active && filters.active !== '') {
+        query = query.eq('active', filters.active === 'true');
       }
 
       const { data, error, count } = await query;

@@ -191,86 +191,122 @@ export const SupabaseAuthProvider: React.FC<SupabaseAuthProviderProps> = ({ chil
 
   // Initialize authentication on mount
   useEffect(() => {
+    let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
+
     const initializeAuth = async () => {
       try {
+        console.log('🔄 Starting auth initialization...');
+        
         // Check if Supabase is properly configured
         if (!process.env.REACT_APP_SUPABASE_URL || !process.env.REACT_APP_SUPABASE_ANON_KEY) {
           console.warn('⚠️ Supabase not configured - skipping auth initialization');
-          dispatch({ type: 'AUTH_LOGOUT' });
+          if (isMounted) dispatch({ type: 'AUTH_LOGOUT' });
           return;
         }
 
+        // Set timeout to prevent infinite loading
+        timeoutId = setTimeout(() => {
+          if (isMounted) {
+            console.warn('⏰ Auth initialization timeout - forcing logout');
+            dispatch({ type: 'AUTH_LOGOUT' });
+          }
+        }, 10000); // 10 second timeout
+
         // Get current session
+        console.log('🔍 Getting current session...');
         const { session, error } = await authHelpers.getCurrentSession();
         
         if (error) {
-          console.error('Session error:', error);
-          dispatch({ type: 'AUTH_LOGOUT' });
+          console.error('❌ Session error:', error);
+          if (isMounted) dispatch({ type: 'AUTH_LOGOUT' });
           return;
         }
 
         if (session?.user) {
-          // Get user profile from users table
-          const { data: userProfile, error: profileError } = await dbHelpers.select<SupabaseUser>(
+          console.log('👤 User found, getting profile...');
+          
+          // Get user profile from users table with timeout
+          const profilePromise = dbHelpers.select<SupabaseUser>(
             'users',
             '*',
             { email: session.user.email }
           );
 
+          const profileTimeout = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Profile query timeout')), 5000)
+          );
+
+          const { data: userProfile, error: profileError } = await Promise.race([
+            profilePromise,
+            profileTimeout
+          ]) as any;
+
           if (profileError || !userProfile || userProfile.length === 0) {
-            console.error('Profile error:', profileError);
-            dispatch({ type: 'AUTH_LOGOUT' });
+            console.error('❌ Profile error:', profileError);
+            if (isMounted) dispatch({ type: 'AUTH_LOGOUT' });
             return;
           }
 
           const user = userProfile[0];
+          console.log('✅ User profile loaded:', user.email);
           
-          dispatch({
-            type: 'AUTH_SUCCESS',
-            payload: {
-              user: {
-                id: user.id,
-                email: user.email,
-                first_name: user.first_name,
-                last_name: user.last_name,
-                phone: user.phone,
-                is_admin: user.is_admin || false,
-                is_faculty: user.is_faculty || false,
-                is_student: user.is_student || false,
-                is_parent: user.is_parent || false,
-                is_staff: user.is_staff || false,
-                company_id: user.company_id,
-                department_id: user.department_id,
-                permissions: [], // TODO: Implement permissions
-                roles: [], // TODO: Implement roles
+          if (isMounted) {
+            dispatch({
+              type: 'AUTH_SUCCESS',
+              payload: {
+                user: {
+                  id: user.id,
+                  email: user.email,
+                  first_name: user.first_name,
+                  last_name: user.last_name,
+                  phone: user.phone,
+                  is_admin: user.is_admin || false,
+                  is_faculty: user.is_faculty || false,
+                  is_student: user.is_student || false,
+                  is_parent: user.is_parent || false,
+                  is_staff: user.is_staff || false,
+                  company_id: user.company_id,
+                  department_id: user.department_id,
+                  permissions: [], // TODO: Implement permissions
+                  roles: [], // TODO: Implement roles
+                },
+                token: session.access_token,
+                refreshToken: session.refresh_token,
+                currentSession: {
+                  id: session.user.id,
+                  device: navigator.userAgent,
+                  ip_address: 'Unknown', // TODO: Get real IP
+                  location: 'Unknown', // TODO: Get real location
+                  isCurrentSession: true,
+                  lastActivity: new Date().toISOString(),
+                  createdAt: session.user.created_at,
+                },
               },
-              token: session.access_token,
-              refreshToken: session.refresh_token,
-              currentSession: {
-                id: session.user.id,
-                device: navigator.userAgent,
-                ip_address: 'Unknown', // TODO: Get real IP
-                location: 'Unknown', // TODO: Get real location
-                isCurrentSession: true,
-                lastActivity: new Date().toISOString(),
-                createdAt: session.user.created_at,
-              },
-            },
-          });
+            });
 
-          // Start timers for authenticated user
-          resetInactivityTimer();
-          startSessionTimer();
+            // Start timers for authenticated user
+            resetInactivityTimer();
+            startSessionTimer();
+          }
         } else {
-          dispatch({ type: 'AUTH_LOGOUT' });
+          console.log('👤 No user session found');
+          if (isMounted) dispatch({ type: 'AUTH_LOGOUT' });
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
-        dispatch({ type: 'AUTH_LOGOUT' });
+        console.error('❌ Auth initialization error:', error);
+        if (isMounted) dispatch({ type: 'AUTH_LOGOUT' });
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
       }
     };
 
     initializeAuth();
+
+    return () => {
+      isMounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -591,9 +627,102 @@ export const SupabaseAuthProvider: React.FC<SupabaseAuthProviderProps> = ({ chil
     // Admin has all permissions
     if (state.user.is_admin) return true;
 
-    // TODO: Implement proper permission checking
-    // For now, return true for basic functionality
-    return true;
+    // Role-based permission checking
+    if (state.user.is_student) {
+      // Students can only view their own data and basic academic info
+      switch (resource) {
+        case 'user':
+          return action === 'read'; // Dashboard access
+        case 'student':
+          return action === 'read'; // Students can view students list (for their own data)
+        case 'course':
+          return action === 'read'; // Courses and timetable
+        case 'attendance':
+          return action === 'read' && conditions?.student_id === state.user.id;
+        case 'exam':
+          return action === 'read';
+        case 'assignment':
+          return action === 'read';
+        case 'grade':
+          return action === 'read' && conditions?.student_id === state.user.id;
+        case 'report':
+          return action === 'read' && conditions?.student_id === state.user.id;
+        case 'library':
+          return action === 'read';
+        case 'setting':
+          return action === 'read'; // Activities and facilities
+        case 'fee':
+          return action === 'read'; // Fees
+        default:
+          return false;
+      }
+    }
+
+    if (state.user.is_faculty) {
+      // Faculty can manage their assigned courses and students
+      switch (resource) {
+        case 'dashboard':
+          return action === 'view';
+        case 'courses':
+          return ['view', 'manage'].includes(action);
+        case 'students':
+          return action === 'view';
+        case 'attendance':
+          return ['view', 'mark'].includes(action);
+        case 'exams':
+          return ['view', 'manage'].includes(action);
+        case 'assignments':
+          return ['view', 'manage'].includes(action);
+        case 'grades':
+          return ['view', 'manage'].includes(action);
+        case 'faculty':
+          return action === 'view' && conditions?.faculty_id === state.user.id;
+        case 'timetable':
+          return action === 'view';
+        case 'reports':
+          return action === 'view';
+        case 'library':
+          return action === 'view';
+        case 'activities':
+          return action === 'view';
+        case 'facilities':
+          return action === 'view';
+        case 'departments':
+          return action === 'view';
+        case 'admissions':
+          return action === 'view';
+        default:
+          return false;
+      }
+    }
+
+    if (state.user.is_parent) {
+      // Parents can only view their children's data
+      switch (resource) {
+        case 'dashboard':
+          return action === 'view';
+        case 'students':
+          return action === 'view' && conditions?.parent_id === state.user.id;
+        case 'attendance':
+          return action === 'view' && conditions?.parent_id === state.user.id;
+        case 'grades':
+          return action === 'view' && conditions?.parent_id === state.user.id;
+        case 'courses':
+          return action === 'view';
+        case 'exams':
+          return action === 'view';
+        case 'timetable':
+          return action === 'view';
+        case 'reports':
+          return action === 'view' && conditions?.parent_id === state.user.id;
+        default:
+          return false;
+      }
+    }
+
+    // No staff role in login page, so remove this section
+
+    return false;
   };
 
   const hasRole = (role: UserRole): boolean => {
@@ -608,8 +737,6 @@ export const SupabaseAuthProvider: React.FC<SupabaseAuthProviderProps> = ({ chil
         return state.user.is_student || state.user.is_admin || false;
       case 'parent':
         return state.user.is_parent || state.user.is_admin || false;
-      case 'staff':
-        return state.user.is_staff || state.user.is_admin || false;
       default:
         return false;
     }

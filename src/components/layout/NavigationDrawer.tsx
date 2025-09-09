@@ -42,6 +42,8 @@ import AdminIcon from '@mui/icons-material/AdminPanelSettings';
 import FacultyIcon from '@mui/icons-material/Group';
 import StudentIcon from '@mui/icons-material/School';
 import ParentIcon from '@mui/icons-material/FamilyRestroom';
+import UploadIcon from '@mui/icons-material/Upload';
+import HistoryIcon from '@mui/icons-material/History';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
 import { MenuItem } from '../../types';
@@ -51,7 +53,201 @@ import { PermissionAction, ResourceType } from '../../types/auth';
 // Navigation Menu Configuration
 // =====================================================
 
-const createMenuItems = (hasPermission: (action: string, resource: string, conditions?: Record<string, any>) => boolean): MenuItem[] => [
+// Student-specific menu items
+const createStudentMenuItems = (): MenuItem[] => [
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: DashboardIcon,
+    path: '/dashboard',
+    permission: 'view_dashboard',
+  },
+  {
+    id: 'academics',
+    label: 'Academics',
+    icon: SchoolIcon,
+    children: [
+      {
+        id: 'courses',
+        label: 'My Courses',
+        icon: BookIcon,
+        path: '/courses',
+        permission: 'view_courses',
+      },
+      {
+        id: 'timetable',
+        label: 'My Timetable',
+        icon: ScheduleIcon,
+        path: '/academics/timetable',
+        permission: 'view_timetable',
+      },
+      {
+        id: 'grades',
+        label: 'My Grades',
+        icon: AssessmentIcon,
+        path: '/academics/grades',
+        permission: 'view_grades',
+      },
+    ],
+  },
+  {
+    id: 'assignments',
+    label: 'Assignments',
+    icon: AssignmentIcon,
+    children: [
+      {
+        id: 'my-assignments',
+        label: 'My Assignments',
+        icon: AssignmentIcon,
+        path: '/assignments',
+        permission: 'view_assignments',
+      },
+      {
+        id: 'submissions',
+        label: 'Submissions',
+        icon: UploadIcon,
+        path: '/assignments/submissions',
+        permission: 'view_assignments',
+      },
+    ],
+  },
+  {
+    id: 'examinations',
+    label: 'Examinations',
+    icon: AssessmentIcon,
+    children: [
+      {
+        id: 'exams',
+        label: 'My Exams',
+        icon: AssessmentIcon,
+        path: '/exams',
+        permission: 'view_exams',
+      },
+      {
+        id: 'results',
+        label: 'My Results',
+        icon: AssessmentIcon,
+        path: '/exams/results',
+        permission: 'view_grades',
+      },
+    ],
+  },
+  {
+    id: 'attendance',
+    label: 'Attendance',
+    icon: ScheduleIcon,
+    children: [
+      {
+        id: 'my-attendance',
+        label: 'My Attendance',
+        icon: ScheduleIcon,
+        path: '/attendance',
+        permission: 'view_attendance',
+      },
+      {
+        id: 'attendance-reports',
+        label: 'Attendance Reports',
+        icon: AssessmentIcon,
+        path: '/attendance/reports',
+        permission: 'view_attendance',
+      },
+    ],
+  },
+  {
+    id: 'library',
+    label: 'Library',
+    icon: LibraryIcon,
+    children: [
+      {
+        id: 'catalog',
+        label: 'Library Catalog',
+        icon: BookIcon,
+        path: '/library/catalog',
+        permission: 'view_library',
+      },
+      {
+        id: 'my-books',
+        label: 'My Books',
+        icon: AssignmentIcon,
+        path: '/library/my-books',
+        permission: 'view_library',
+      },
+      {
+        id: 'reservations',
+        label: 'Reservations',
+        icon: ScheduleIcon,
+        path: '/library/reservations',
+        permission: 'view_library',
+      },
+    ],
+  },
+  {
+    id: 'fees',
+    label: 'Fees',
+    icon: PaymentIcon,
+    children: [
+      {
+        id: 'my-fees',
+        label: 'My Fees',
+        icon: PaymentIcon,
+        path: '/fees/my-fees',
+        permission: 'view_fees',
+      },
+      {
+        id: 'payment-history',
+        label: 'Payment History',
+        icon: HistoryIcon,
+        path: '/fees/history',
+        permission: 'view_fees',
+      },
+    ],
+  },
+  {
+    id: 'activities',
+    label: 'Activities',
+    icon: AssignmentIcon,
+    children: [
+      {
+        id: 'my-activities',
+        label: 'My Activities',
+        icon: PeopleIcon,
+        path: '/activities/my-activities',
+        permission: 'view_activities',
+      },
+      {
+        id: 'events',
+        label: 'Events',
+        icon: ScheduleIcon,
+        path: '/activities/events',
+        permission: 'view_activities',
+      },
+    ],
+  },
+  {
+    id: 'facilities',
+    label: 'Facilities',
+    icon: SchoolIcon,
+    children: [
+      {
+        id: 'classrooms',
+        label: 'Classrooms',
+        icon: SchoolIcon,
+        path: '/facilities/classrooms',
+        permission: 'view_facilities',
+      },
+      {
+        id: 'venues',
+        label: 'Venues',
+        icon: SchoolIcon,
+        path: '/facilities/venues',
+        permission: 'view_facilities',
+      },
+    ],
+  },
+];
+
+// Admin/Faculty menu items (original)
+const createAdminMenuItems = (hasPermission: (action: string, resource: string, conditions?: Record<string, any>) => boolean): MenuItem[] => [
   {
     id: 'dashboard',
     label: 'Dashboard',
@@ -368,7 +564,78 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   // Menu Items
   // =====================================================
 
-  const menuItems = createMenuItems((action: any, resource: any, conditions?: any) => hasPermission(action, resource, conditions));
+  // Filter menu items based on user permissions
+  const filterMenuItems = (items: MenuItem[]): MenuItem[] => {
+    return items.filter(item => {
+      // Check if user has permission for this item
+      if (item.permission) {
+        // Map permission strings to action/resource pairs
+        const permissionMap: Record<string, { action: string; resource: string }> = {
+          'view_dashboard': { action: 'view', resource: 'dashboard' },
+          'manage_courses': { action: 'manage', resource: 'courses' },
+          'view_courses': { action: 'view', resource: 'courses' },
+          'manage_departments': { action: 'manage', resource: 'departments' },
+          'view_timetable': { action: 'view', resource: 'timetable' },
+          'manage_students': { action: 'manage', resource: 'students' },
+          'view_students': { action: 'view', resource: 'students' },
+          'mark_attendance': { action: 'mark', resource: 'attendance' },
+          'view_attendance': { action: 'view', resource: 'attendance' },
+          'manage_admissions': { action: 'manage', resource: 'admissions' },
+          'manage_faculty': { action: 'manage', resource: 'faculty' },
+          'view_faculty': { action: 'view', resource: 'faculty' },
+          'manage_exams': { action: 'manage', resource: 'exams' },
+          'view_exams': { action: 'view', resource: 'exams' },
+          'view_reports': { action: 'view', resource: 'reports' },
+          'manage_library': { action: 'manage', resource: 'library' },
+          'view_library': { action: 'view', resource: 'library' },
+          'manage_fees': { action: 'manage', resource: 'fees' },
+          'manage_activities': { action: 'manage', resource: 'activities' },
+          'view_activities': { action: 'view', resource: 'activities' },
+          'manage_facilities': { action: 'manage', resource: 'facilities' },
+          'view_facilities': { action: 'view', resource: 'facilities' },
+          'manage_users': { action: 'manage', resource: 'users' },
+          'manage_system': { action: 'manage', resource: 'system' },
+        };
+        
+        const permission = permissionMap[item.permission as keyof typeof permissionMap];
+        if (permission) {
+          // Check if user has the required permission
+          if (!hasPermission(permission.action as any, permission.resource as any)) {
+            // For students, also check if they have view permission for the same resource
+            if (permission.action === 'manage' && hasPermission('view' as any, permission.resource as any)) {
+              // Allow students to see manage items if they have view permission
+            } else {
+              return false;
+            }
+          }
+        } else {
+          // If no permission mapping found, allow access (for items without specific permissions)
+          return true;
+        }
+      }
+      
+      // Filter children recursively
+      if (item.children) {
+        const filteredChildren = filterMenuItems(item.children);
+        if (filteredChildren.length === 0) {
+          return false; // Hide parent if no children are visible
+        }
+        item.children = filteredChildren;
+      }
+      
+      // If item has no permission and no children, show it (for parent items)
+      if (!item.permission && !item.children) {
+        return true;
+      }
+      
+      return true;
+    });
+  };
+
+  // Create role-based menu items
+  const menuItems = user?.is_student 
+    ? createStudentMenuItems()
+    : createAdminMenuItems((action: any, resource: any, conditions?: any) => hasPermission(action, resource, conditions));
 
   // =====================================================
   // Event Handlers
@@ -444,8 +711,20 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
           'view_reports': { action: 'read', resource: 'report' },
           'manage_library': { action: 'manage', resource: 'library' },
           'manage_fees': { action: 'manage', resource: 'fee' },
+          'manage_activities': { action: 'manage', resource: 'setting' },
+          'view_activities': { action: 'read', resource: 'setting' },
+          'manage_facilities': { action: 'manage', resource: 'setting' },
+          'view_facilities': { action: 'read', resource: 'setting' },
           'manage_users': { action: 'manage', resource: 'user' },
           'manage_system': { action: 'manage', resource: 'setting' },
+          // Student-specific permissions
+          'view_courses': { action: 'read', resource: 'course' },
+          'view_grades': { action: 'read', resource: 'grade' },
+          'view_assignments': { action: 'read', resource: 'assignment' },
+          'view_exams': { action: 'read', resource: 'exam' },
+          'view_attendance': { action: 'read', resource: 'attendance' },
+          'view_library': { action: 'read', resource: 'library' },
+          'view_fees': { action: 'read', resource: 'fee' },
         };
         const mapped = permissionMap[item.permission];
         if (mapped) {
@@ -617,7 +896,7 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
           </IconButton>
           <IconButton
             size="small"
-            onClick={handleLogout}
+            onClick={() => navigate('/settings')}
             sx={{ flex: 1 }}
           >
             <SettingsIcon />

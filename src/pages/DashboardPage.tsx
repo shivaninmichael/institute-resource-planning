@@ -154,6 +154,77 @@ const DashboardPage: React.FC = () => {
     setAnchorEl(null);
   };
 
+  // Role-based dashboard content
+  const isStudent = user?.is_student;
+  const isAdmin = user?.is_admin;
+  const isFaculty = user?.is_faculty;
+  const isParent = user?.is_parent;
+
+  // Student-specific mock data
+  const studentKPIData: KPIData = {
+    students: {
+      total: 0, // Not relevant for students
+      trend: 0,
+      trendLabel: '',
+    },
+    attendance: {
+      value: '92%',
+      trend: 3.2,
+      trendLabel: 'vs last month',
+      progress: 92,
+    },
+    assignments: {
+      total: 12,
+      completed: 10,
+      progress: 83,
+    },
+    fees: {
+      collected: '$2,500',
+      trend: 0,
+      trendLabel: 'Semester fees',
+      progress: 100,
+    },
+  };
+
+  // Student-specific activities
+  const studentActivities: Activity[] = [
+    {
+      id: '1',
+      type: 'assignment',
+      title: 'Mathematics Assignment Due',
+      description: 'Calculus Assignment 3 due tomorrow',
+      timestamp: '2024-01-15T10:30:00Z',
+      user: {
+        name: 'Prof. Smith',
+      },
+      status: 'pending',
+    },
+    {
+      id: '2',
+      type: 'exam',
+      title: 'Physics Mid-term Results',
+      description: 'Your Physics mid-term results are now available',
+      timestamp: '2024-01-14T15:45:00Z',
+      status: 'completed',
+    },
+    {
+      id: '3',
+      type: 'attendance',
+      title: 'Attendance Marked',
+      description: 'Your attendance for today has been recorded',
+      timestamp: '2024-01-14T08:30:00Z',
+      status: 'completed',
+    },
+    {
+      id: '4',
+      type: 'event',
+      title: 'Library Book Due',
+      description: 'Your library book "Advanced Mathematics" is due soon',
+      timestamp: '2024-01-13T11:20:00Z',
+      status: 'upcoming',
+    },
+  ];
+
   return (
       <Box sx={{ p: 3 }}>
         {/* Header */}
@@ -187,84 +258,162 @@ const DashboardPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* KPI Cards */}
+      {/* KPI Cards - Role-based content */}
       <Grid container spacing={3} mb={3}>
-        <Grid item xs={12} sm={6} md={3}>
-          <KPICard
-            title="Total Students"
-            value={mockKPIData.students.total}
-            trend={mockKPIData.students.trend}
-            trendLabel={mockKPIData.students.trendLabel}
-            icon={<PeopleIcon />}
-            color="primary"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <KPICard
-            title="Attendance Rate"
-            value={mockKPIData.attendance.value}
-            trend={mockKPIData.attendance.trend}
-            trendLabel={mockKPIData.attendance.trendLabel}
-            progress={mockKPIData.attendance.progress}
-            icon={<EventIcon />}
-            color="warning"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <KPICard
-            title="Assignments"
-            value={`${mockKPIData.assignments.completed}/${mockKPIData.assignments.total}`}
-            description="Completed assignments"
-            progress={mockKPIData.assignments.progress}
-            icon={<AssignmentIcon />}
-            color="success"
-                />
-              </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <KPICard
-            title="Fees Collected"
-            value={mockKPIData.fees.collected}
-            trend={mockKPIData.fees.trend}
-            trendLabel={mockKPIData.fees.trendLabel}
-            progress={mockKPIData.fees.progress}
-            icon={<PaymentIcon />}
-            color="info"
-                />
-              </Grid>
+        {isStudent ? (
+          // Student Dashboard Cards
+          <>
+            <Grid item xs={12} sm={6} md={3}>
+              <KPICard
+                title="My Attendance"
+                value={studentKPIData.attendance.value}
+                trend={studentKPIData.attendance.trend}
+                trendLabel={studentKPIData.attendance.trendLabel}
+                progress={studentKPIData.attendance.progress}
+                icon={<EventIcon />}
+                color="warning"
+              />
             </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <KPICard
+                title="Assignments"
+                value={`${studentKPIData.assignments.completed}/${studentKPIData.assignments.total}`}
+                description="Completed assignments"
+                progress={studentKPIData.assignments.progress}
+                icon={<AssignmentIcon />}
+                color="success"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <KPICard
+                title="Fees Status"
+                value={studentKPIData.fees.collected}
+                trend={studentKPIData.fees.trend}
+                trendLabel={studentKPIData.fees.trendLabel}
+                progress={studentKPIData.fees.progress}
+                icon={<PaymentIcon />}
+                color="info"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <KPICard
+                title="Current GPA"
+                value="3.8"
+                trend={0.2}
+                trendLabel="vs last semester"
+                icon={<SchoolIcon />}
+                color="primary"
+              />
+            </Grid>
+          </>
+        ) : (
+          // Admin/Faculty Dashboard Cards
+          <>
+            <Grid item xs={12} sm={6} md={3}>
+              <KPICard
+                title="Total Students"
+                value={mockKPIData.students.total}
+                trend={mockKPIData.students.trend}
+                trendLabel={mockKPIData.students.trendLabel}
+                icon={<PeopleIcon />}
+                color="primary"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <KPICard
+                title="Attendance Rate"
+                value={mockKPIData.attendance.value}
+                trend={mockKPIData.attendance.trend}
+                trendLabel={mockKPIData.attendance.trendLabel}
+                progress={mockKPIData.attendance.progress}
+                icon={<EventIcon />}
+                color="warning"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <KPICard
+                title="Assignments"
+                value={`${mockKPIData.assignments.completed}/${mockKPIData.assignments.total}`}
+                description="Completed assignments"
+                progress={mockKPIData.assignments.progress}
+                icon={<AssignmentIcon />}
+                color="success"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <KPICard
+                title="Fees Collected"
+                value={mockKPIData.fees.collected}
+                trend={mockKPIData.fees.trend}
+                trendLabel={mockKPIData.fees.trendLabel}
+                progress={mockKPIData.fees.progress}
+                icon={<PaymentIcon />}
+                color="info"
+              />
+            </Grid>
+          </>
+        )}
+      </Grid>
 
-      {/* Charts and Activity Feed */}
+      {/* Charts and Activity Feed - Role-based content */}
       <Grid container spacing={3}>
         <Grid item xs={12} md={8}>
           <Grid container spacing={3}>
-          <Grid item xs={12}>
-              <ChartCard
-                title="Academic Performance"
-                subtitle="Student performance across subjects"
-                chart={<div style={{ height: 300 }}>Chart placeholder</div>}
-                onRefresh={() => console.log('Refreshing chart...')}
-                onDownload={() => console.log('Downloading chart...')}
-            />
-          </Grid>
-          <Grid item xs={12}>
-              <ChartCard
-                title="Attendance Trends"
-                subtitle="Daily attendance statistics"
-                chart={<div style={{ height: 300 }}>Chart placeholder</div>}
-                onRefresh={() => console.log('Refreshing chart...')}
-                onDownload={() => console.log('Downloading chart...')}
-            />
-          </Grid>
+            {isStudent ? (
+              // Student Charts
+              <>
+                <Grid item xs={12}>
+                  <ChartCard
+                    title="My Academic Performance"
+                    subtitle="Your performance across subjects"
+                    chart={<div style={{ height: 300 }}>Personal grades chart placeholder</div>}
+                    onRefresh={() => console.log('Refreshing chart...')}
+                    onDownload={() => console.log('Downloading chart...')}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <ChartCard
+                    title="My Attendance Trends"
+                    subtitle="Your daily attendance record"
+                    chart={<div style={{ height: 300 }}>Personal attendance chart placeholder</div>}
+                    onRefresh={() => console.log('Refreshing chart...')}
+                    onDownload={() => console.log('Downloading chart...')}
+                  />
+                </Grid>
+              </>
+            ) : (
+              // Admin/Faculty Charts
+              <>
+                <Grid item xs={12}>
+                  <ChartCard
+                    title="Academic Performance"
+                    subtitle="Student performance across subjects"
+                    chart={<div style={{ height: 300 }}>Chart placeholder</div>}
+                    onRefresh={() => console.log('Refreshing chart...')}
+                    onDownload={() => console.log('Downloading chart...')}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <ChartCard
+                    title="Attendance Trends"
+                    subtitle="Daily attendance statistics"
+                    chart={<div style={{ height: 300 }}>Chart placeholder</div>}
+                    onRefresh={() => console.log('Refreshing chart...')}
+                    onDownload={() => console.log('Downloading chart...')}
+                  />
+                </Grid>
+              </>
+            )}
           </Grid>
         </Grid>
         <Grid item xs={12} md={4}>
-            <ActivityFeed
-            activities={mockActivities}
-            title="Recent Activities"
+          <ActivityFeed
+            activities={isStudent ? studentActivities : mockActivities}
+            title={isStudent ? "My Recent Activities" : "Recent Activities"}
             onSeeAll={() => console.log('Viewing all activities...')}
-            />
-          </Grid>
+          />
         </Grid>
+      </Grid>
       </Box>
   );
 };
