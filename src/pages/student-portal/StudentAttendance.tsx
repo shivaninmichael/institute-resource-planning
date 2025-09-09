@@ -32,8 +32,8 @@ import ExcusedIcon from '@mui/icons-material/EventAvailable';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { useAuth } from '../../contexts/AuthContext';
-import { studentApi } from '../../services/api';
+import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
+import { supabase } from '../../services/supabase';
 
 interface AttendanceRecord {
   id: string;
@@ -67,7 +67,7 @@ interface AttendanceData {
 }
 
 const StudentAttendance: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [data, setData] = useState<AttendanceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

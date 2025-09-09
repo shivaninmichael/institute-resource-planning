@@ -33,8 +33,8 @@ import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { useAuth } from '../../contexts/AuthContext';
-import { courseApi, departmentApi, facultyApi } from '../../services/api';
+import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
+import { supabase } from '../../services/supabase';
 // import { CourseStatus } from '../../types';
 
 interface CourseFormData {
@@ -64,7 +64,7 @@ interface CourseFormData {
 const CourseForm: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);

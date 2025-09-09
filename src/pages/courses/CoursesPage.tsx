@@ -40,7 +40,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
-import { courseApi } from '../../services/api';
+import { supabase } from '../../services/supabase';
 import { Course, CourseStatus, CourseLevel } from '../../types';
 
 const CoursesPage: React.FC = () => {
@@ -64,14 +64,32 @@ const CoursesPage: React.FC = () => {
   const loadCourses = async () => {
     try {
       setLoading(true);
-      const response = await courseApi.getCourses({
-        page: page + 1,
-        limit: rowsPerPage,
-        search: searchTerm,
-        status: statusFilter !== 'all' ? statusFilter : undefined,
-        level: levelFilter !== 'all' ? levelFilter : undefined,
-      });
-      setCourses(response.data);
+      
+      let query = supabase
+        .from('courses')
+        .select(`
+          *,
+          departments!inner(*),
+          program_levels!inner(*)
+        `)
+        .range(page * rowsPerPage, (page + 1) * rowsPerPage - 1);
+
+      // Apply filters
+      if (searchTerm) {
+        query = query.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+      }
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
+      if (levelFilter !== 'all') {
+        query = query.eq('level', levelFilter);
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) throw error;
+
+      setCourses(data || []);
       setError(null);
     } catch (err) {
       setError('Failed to load courses data');
@@ -85,7 +103,13 @@ const CoursesPage: React.FC = () => {
     if (!courseToDelete) return;
 
     try {
-      await courseApi.deleteCourse(courseToDelete.id);
+      const { error } = await supabase
+        .from('courses')
+        .delete()
+        .eq('id', courseToDelete.id);
+
+      if (error) throw error;
+
       setCourses(courses.filter(c => c.id !== courseToDelete.id));
       setDeleteDialogOpen(false);
       setCourseToDelete(null);

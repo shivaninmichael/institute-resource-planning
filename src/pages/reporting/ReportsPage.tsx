@@ -58,8 +58,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { useAuth } from '../../contexts/AuthContext';
-import { reportsApi } from '../../services/api';
+import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
+import { supabase } from '../../services/supabase';
 
 interface Report {
   id: string;
@@ -115,7 +115,7 @@ function TabPanel(props: TabPanelProps) {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 const ReportsPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [reports, setReports] = useState<Report[]>([]);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [reportData, setReportData] = useState<ReportData | null>(null);

@@ -36,7 +36,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import FilterIcon from '@mui/icons-material/FilterList';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
-import { facultyApi } from '../../services/api';
+import { supabase } from '../../services/supabase';
 import { Faculty, FacultyStatus, FacultyDepartment } from '../../types';
 
 const FacultyPage: React.FC = () => {
@@ -60,14 +60,32 @@ const FacultyPage: React.FC = () => {
   const loadFaculty = async () => {
     try {
       setLoading(true);
-      const response = await facultyApi.getFaculty({
-        page: page + 1,
-        limit: rowsPerPage,
-        search: searchTerm,
-        status: statusFilter !== 'all' ? statusFilter : undefined,
-        department: departmentFilter !== 'all' ? departmentFilter : undefined,
-      });
-      setFaculty(response.data);
+      
+      let query = supabase
+        .from('faculty')
+        .select(`
+          *,
+          users!inner(*),
+          departments!inner(*)
+        `)
+        .range(page * rowsPerPage, (page + 1) * rowsPerPage - 1);
+
+      // Apply filters
+      if (searchTerm) {
+        query = query.or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,employee_id.ilike.%${searchTerm}%`);
+      }
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
+      if (departmentFilter !== 'all') {
+        query = query.eq('department_id', departmentFilter);
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) throw error;
+
+      setFaculty(data || []);
       setError(null);
     } catch (err) {
       setError('Failed to load faculty data');
@@ -81,7 +99,13 @@ const FacultyPage: React.FC = () => {
     if (!facultyToDelete) return;
 
     try {
-      await facultyApi.deleteFaculty(facultyToDelete.id);
+      const { error } = await supabase
+        .from('faculty')
+        .delete()
+        .eq('id', facultyToDelete.id);
+
+      if (error) throw error;
+
       setFaculty(faculty.filter(f => f.id !== facultyToDelete.id));
       setDeleteDialogOpen(false);
       setFacultyToDelete(null);

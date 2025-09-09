@@ -54,8 +54,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PreviewIcon from '@mui/icons-material/Visibility';
 import TemplateIcon from '@mui/icons-material/CloudDownload';
 import { useDropzone } from 'react-dropzone';
-import { useAuth } from '../../contexts/AuthContext';
-import { importExportApi } from '../../services/api';
+import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
+import { supabase } from '../../services/supabase';
 
 interface ImportTemplate {
   id: string;
@@ -138,7 +138,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const ImportExportPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [templates, setTemplates] = useState<ImportTemplate[]>([]);
   const [importJobs, setImportJobs] = useState<ImportJob[]>([]);
   const [exportJobs, setExportJobs] = useState<ExportJob[]>([]);

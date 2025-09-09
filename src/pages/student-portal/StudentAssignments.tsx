@@ -30,8 +30,8 @@ import ScheduleIcon from '@mui/icons-material/Schedule';
 import CompletedIcon from '@mui/icons-material/CheckCircle';
 import PendingIcon from '@mui/icons-material/Warning';
 import OverdueIcon from '@mui/icons-material/Error';
-import { useAuth } from '../../contexts/AuthContext';
-import { studentApi } from '../../services/api';
+import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
+import { supabase } from '../../services/supabase';
 
 interface Assignment {
   id: string;
@@ -72,7 +72,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const StudentAssignments: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

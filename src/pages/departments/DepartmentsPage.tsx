@@ -41,7 +41,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import PersonIcon from '@mui/icons-material/Person';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
-import { departmentApi } from '../../services/api';
+import { supabase } from '../../services/supabase';
 import { Department, DepartmentStatus } from '../../types';
 
 const DepartmentsPage: React.FC = () => {
@@ -64,13 +64,28 @@ const DepartmentsPage: React.FC = () => {
   const loadDepartments = async () => {
     try {
       setLoading(true);
-      const response = await departmentApi.getDepartments({
-        page: page + 1,
-        limit: rowsPerPage,
-        search: searchTerm,
-        status: statusFilter !== 'all' ? statusFilter : undefined,
-      });
-      setDepartments(response.data);
+      
+      let query = supabase
+        .from('departments')
+        .select(`
+          *,
+          companies!inner(*)
+        `)
+        .range(page * rowsPerPage, (page + 1) * rowsPerPage - 1);
+
+      // Apply filters
+      if (searchTerm) {
+        query = query.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+      }
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) throw error;
+
+      setDepartments(data || []);
       setError(null);
     } catch (err) {
       setError('Failed to load departments data');
@@ -84,7 +99,13 @@ const DepartmentsPage: React.FC = () => {
     if (!departmentToDelete) return;
 
     try {
-      await departmentApi.deleteDepartment(departmentToDelete.id);
+      const { error } = await supabase
+        .from('departments')
+        .delete()
+        .eq('id', departmentToDelete.id);
+
+      if (error) throw error;
+
       setDepartments(departments.filter(d => d.id !== departmentToDelete.id));
       setDeleteDialogOpen(false);
       setDepartmentToDelete(null);

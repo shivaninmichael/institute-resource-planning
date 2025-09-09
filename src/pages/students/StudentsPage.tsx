@@ -40,7 +40,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import PersonIcon from '@mui/icons-material/Person';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
-import { studentApi } from '../../services/api';
+import { supabase } from '../../services/supabase';
 import { Student } from '../../types';
 
 interface StudentFilters {
@@ -77,19 +77,36 @@ export const StudentsPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const params = {
-        page,
-        limit: 10,
-        search: filters.search || undefined,
-        gender: filters.gender || undefined,
-        category: filters.category || undefined,
-        active: filters.active || undefined,
-      };
 
-      const response = await studentApi.getStudents(params);
-      setStudents(response.data || []);
-      setTotalPages(response.pagination?.totalPages || 1);
+      let query = supabase
+        .from('students')
+        .select(`
+          *,
+          users!inner(*),
+          courses!inner(*)
+        `)
+        .range(page * rowsPerPage, (page + 1) * rowsPerPage - 1);
+
+      // Apply filters
+      if (filters.search) {
+        query = query.or(`first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,student_id.ilike.%${filters.search}%`);
+      }
+      if (filters.gender) {
+        query = query.eq('gender', filters.gender);
+      }
+      if (filters.category) {
+        query = query.eq('category', filters.category);
+      }
+      if (filters.active !== undefined) {
+        query = query.eq('active', filters.active);
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) throw error;
+
+      setStudents(data || []);
+      setTotalPages(Math.ceil((count || 0) / rowsPerPage));
     } catch (err: any) {
       setError(err.message || 'Failed to load students');
     } finally {
@@ -111,7 +128,13 @@ export const StudentsPage: React.FC = () => {
     if (!selectedStudent) return;
 
     try {
-      await studentApi.deleteStudent(selectedStudent.id);
+      const { error } = await supabase
+        .from('students')
+        .delete()
+        .eq('id', selectedStudent.id);
+
+      if (error) throw error;
+
       setDeleteDialogOpen(false);
       setSelectedStudent(null);
       loadStudents();

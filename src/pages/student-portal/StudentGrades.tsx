@@ -28,8 +28,8 @@ import {
 import GradeIcon from '@mui/icons-material/Grade';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import { useAuth } from '../../contexts/AuthContext';
-import { studentApi } from '../../services/api';
+import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
+import { supabase } from '../../services/supabase';
 
 interface Grade {
   id: string;
@@ -59,7 +59,7 @@ interface GradeData {
 }
 
 const StudentGrades: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [data, setData] = useState<GradeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

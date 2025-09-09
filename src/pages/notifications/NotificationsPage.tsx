@@ -65,8 +65,8 @@ import SuccessIcon from '@mui/icons-material/CheckCircle';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { useAuth } from '../../contexts/AuthContext';
-import { notificationsApi } from '../../services/api';
+import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
+import { supabase } from '../../services/supabase';
 
 interface Notification {
   id: string;
@@ -125,7 +125,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const NotificationsPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [templates, setTemplates] = useState<NotificationTemplate[]>([]);
   const [recipients, setRecipients] = useState<Recipient[]>([]);

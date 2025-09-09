@@ -49,8 +49,8 @@ import { useNavigate } from 'react-router-dom';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { useAuth } from '../../contexts/AuthContext';
-import { attendanceApi, courseApi, studentApi } from '../../services/api';
+import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
+import { supabase } from '../../services/supabase';
 import { Course, Student, Attendance, AttendanceStatus } from '../../types';
 
 interface TabPanelProps {

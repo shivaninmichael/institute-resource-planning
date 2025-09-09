@@ -1,0 +1,76 @@
+# SPA Redirects for React Router
+# This ensures all routes are handled by the React app
+
+# Main routes
+/    /index.html   200
+/dashboard    /index.html   200
+/login    /index.html   200
+/mfa    /index.html   200
+/register    /index.html   200
+/forgot-password    /index.html   200
+
+# Student management
+/students    /index.html   200
+/students/*    /index.html   200
+
+# Faculty management  
+/faculty    /index.html   200
+/faculty/*    /index.html   200
+
+# Course management
+/courses    /index.html   200
+/courses/*    /index.html   200
+
+# Department management
+/departments    /index.html   200
+/departments/*    /index.html   200
+
+# Attendance management
+/attendance    /index.html   200
+/attendance/*    /index.html   200
+
+# Exam management
+/exams    /index.html   200
+/exams/*    /index.html   200
+
+# Admin portal
+/admin    /index.html   200
+/admin/*    /index.html   200
+
+# Faculty portal
+/faculty-portal    /index.html   200
+/faculty-portal/*    /index.html   200
+
+# Student portal
+/student-portal    /index.html   200
+/student-portal/*    /index.html   200
+
+# Additional pages
+/activities    /index.html   200
+/alumni    /index.html   200
+/analytics    /index.html   200
+/assignments    /index.html   200
+/calendar    /index.html   200
+/certificates    /index.html   200
+/communication    /index.html   200
+/documents    /index.html   200
+/facilities    /index.html   200
+/fees    /index.html   200
+/files    /index.html   200
+/hostel    /index.html   200
+/import-export    /index.html   200
+/library    /index.html   200
+/notifications    /index.html   200
+/payroll    /index.html   200
+/profile    /index.html   200
+/reporting    /index.html   200
+/reports    /index.html   200
+/settings    /index.html   200
+/settings/*    /index.html   200
+/timetables    /index.html   200
+/transportation    /index.html   200
+/transportation/*    /index.html   200
+/workflow    /index.html   200
+
+# Catch all - redirect everything else to index.html
+/*    /index.html   200

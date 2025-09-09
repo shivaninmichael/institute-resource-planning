@@ -48,8 +48,8 @@ import { useNavigate } from 'react-router-dom';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { useAuth } from '../../contexts/AuthContext';
-import { examApi, courseApi } from '../../services/api';
+import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
+import { supabase } from '../../services/supabase';
 import { Exam, Course, ExamStatus, ExamType } from '../../types';
 
 interface TabPanelProps {
@@ -102,8 +102,13 @@ const ExamsPage: React.FC = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      const coursesResponse = await courseApi.getCourses();
-      setCourses(coursesResponse.data);
+      const { data, error } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('active', true);
+      
+      if (error) throw error;
+      setCourses(data || []);
     } catch (err) {
       setError('Failed to load initial data');
       console.error('Error loading initial data:', err);
@@ -115,16 +120,37 @@ const ExamsPage: React.FC = () => {
   const loadExams = async () => {
     try {
       setLoading(true);
-      const response = await examApi.getExamSessions({
-        page: page + 1,
-        limit: rowsPerPage,
-        search: searchTerm,
-        status: statusFilter !== 'all' ? statusFilter : undefined,
-        type: typeFilter !== 'all' ? typeFilter : undefined,
-        course_id: courseFilter !== 'all' ? courseFilter : undefined,
-        date: dateFilter?.toISOString().split('T')[0],
-      });
-      setExams(response.data);
+      
+      let query = supabase
+        .from('exam_sessions')
+        .select(`
+          *,
+          courses!inner(*)
+        `)
+        .range(page * rowsPerPage, (page + 1) * rowsPerPage - 1);
+
+      // Apply filters
+      if (searchTerm) {
+        query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+      }
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
+      if (typeFilter !== 'all') {
+        query = query.eq('type', typeFilter);
+      }
+      if (courseFilter !== 'all') {
+        query = query.eq('course_id', courseFilter);
+      }
+      if (dateFilter) {
+        query = query.eq('exam_date', dateFilter.toISOString().split('T')[0]);
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) throw error;
+
+      setExams(data || []);
       setError(null);
     } catch (err) {
       setError('Failed to load exams data');
@@ -138,7 +164,13 @@ const ExamsPage: React.FC = () => {
     if (!examToDelete) return;
 
     try {
-      await examApi.deleteExamSession(examToDelete.id);
+      const { error } = await supabase
+        .from('exam_sessions')
+        .delete()
+        .eq('id', examToDelete.id);
+
+      if (error) throw error;
+
       setExams(exams.filter(e => e.id !== examToDelete.id));
       setDeleteDialogOpen(false);
       setExamToDelete(null);

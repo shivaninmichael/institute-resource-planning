@@ -156,6 +156,39 @@ export const SupabaseAuthProvider: React.FC<SupabaseAuthProviderProps> = ({ chil
   // Effects
   // =====================================================
 
+  // Session timeout configuration
+  const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+  const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes
+  let inactivityTimer: NodeJS.Timeout | null = null;
+  let sessionTimer: NodeJS.Timeout | null = null;
+
+  // Activity tracking
+  const resetInactivityTimer = () => {
+    if (inactivityTimer) {
+      clearTimeout(inactivityTimer);
+    }
+    inactivityTimer = setTimeout(() => {
+      console.log('User inactive for 15 minutes, logging out...');
+      logout();
+    }, INACTIVITY_TIMEOUT);
+  };
+
+  // Session refresh timer
+  const startSessionTimer = () => {
+    if (sessionTimer) {
+      clearInterval(sessionTimer);
+    }
+    sessionTimer = setInterval(async () => {
+      try {
+        await refreshAuth();
+        console.log('Session refreshed successfully');
+      } catch (error) {
+        console.error('Session refresh failed:', error);
+        logout();
+      }
+    }, SESSION_TIMEOUT);
+  };
+
   // Initialize authentication on mount
   useEffect(() => {
     const initializeAuth = async () => {
@@ -224,6 +257,10 @@ export const SupabaseAuthProvider: React.FC<SupabaseAuthProviderProps> = ({ chil
               },
             },
           });
+
+          // Start timers for authenticated user
+          resetInactivityTimer();
+          startSessionTimer();
         } else {
           dispatch({ type: 'AUTH_LOGOUT' });
         }
@@ -281,13 +318,41 @@ export const SupabaseAuthProvider: React.FC<SupabaseAuthProviderProps> = ({ chil
             },
           });
         }
+
+        // Start timers for authenticated user
+        resetInactivityTimer();
+        startSessionTimer();
       } else if (event === 'SIGNED_OUT') {
+        // Clear timers on logout
+        if (inactivityTimer) clearTimeout(inactivityTimer);
+        if (sessionTimer) clearInterval(sessionTimer);
         dispatch({ type: 'AUTH_LOGOUT' });
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    // Add activity listeners
+    const handleActivity = () => {
+      if (state.isAuthenticated) {
+        resetInactivityTimer();
+      }
+    };
+
+    // Listen for user activity
+    document.addEventListener('mousedown', handleActivity);
+    document.addEventListener('keypress', handleActivity);
+    document.addEventListener('scroll', handleActivity);
+    document.addEventListener('touchstart', handleActivity);
+
+    return () => {
+      subscription.unsubscribe();
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      if (sessionTimer) clearInterval(sessionTimer);
+      document.removeEventListener('mousedown', handleActivity);
+      document.removeEventListener('keypress', handleActivity);
+      document.removeEventListener('scroll', handleActivity);
+      document.removeEventListener('touchstart', handleActivity);
+    };
+  }, [state.isAuthenticated]);
 
   // =====================================================
   // Authentication Methods
@@ -368,6 +433,10 @@ export const SupabaseAuthProvider: React.FC<SupabaseAuthProviderProps> = ({ chil
 
   const logout = async (fromAllDevices: boolean = false): Promise<void> => {
     try {
+      // Clear timers
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      if (sessionTimer) clearInterval(sessionTimer);
+
       const { error } = await authHelpers.signOut();
       if (error) {
         console.error('Logout error:', error);

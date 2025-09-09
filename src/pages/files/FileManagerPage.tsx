@@ -54,8 +54,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import FilterIcon from '@mui/icons-material/FilterList';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useDropzone } from 'react-dropzone';
-import { useAuth } from '../../contexts/AuthContext';
-import { filesApi } from '../../services/api';
+import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
+import { supabase } from '../../services/supabase';
 
 interface FileItem {
   id: string;
@@ -86,7 +86,7 @@ interface UploadProgress {
 }
 
 const FileManagerPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [files, setFiles] = useState<FileItem[]>([]);
   const [currentPath, setCurrentPath] = useState<string[]>(['root']);
   const [currentFolder, setCurrentFolder] = useState<string>('root');

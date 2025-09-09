@@ -26,8 +26,8 @@ import LibraryIcon from '@mui/icons-material/LibraryBooks';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import AnnouncementIcon from '@mui/icons-material/Announcement';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { studentApi } from '../../services/api';
+import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
+import { supabase } from '../../services/supabase';
 
 interface StudentDashboardData {
   profile: {
@@ -73,7 +73,7 @@ interface StudentDashboardData {
 
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [data, setData] = useState<StudentDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

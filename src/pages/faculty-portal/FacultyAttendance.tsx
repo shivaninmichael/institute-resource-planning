@@ -42,8 +42,8 @@ import ViewIcon from '@mui/icons-material/Visibility';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { useAuth } from '../../contexts/AuthContext';
-import { facultyApi } from '../../services/api';
+import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
+import { supabase } from '../../services/supabase';
 
 interface Student {
   id: string;
@@ -88,7 +88,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const FacultyAttendance: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());

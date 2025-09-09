@@ -29,8 +29,8 @@ import StudentsIcon from '@mui/icons-material/Group';
 import AnnouncementIcon from '@mui/icons-material/Announcement';
 import ExamIcon from '@mui/icons-material/Assessment';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { facultyApi } from '../../services/api';
+import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
+import { supabase } from '../../services/supabase';
 
 interface FacultyDashboardData {
   profile: {
@@ -78,7 +78,7 @@ interface FacultyDashboardData {
 
 const FacultyDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [data, setData] = useState<FacultyDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

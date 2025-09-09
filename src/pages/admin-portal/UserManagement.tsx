@@ -49,8 +49,8 @@ import PersonIcon from '@mui/icons-material/Person';
 import StudentIcon from '@mui/icons-material/School';
 import FacultyIcon from '@mui/icons-material/Work';
 import AdminIcon from '@mui/icons-material/AdminPanelSettings';
-import { useAuth } from '../../contexts/AuthContext';
-import { adminApi } from '../../services/api';
+import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
+import { supabase } from '../../services/supabase';
 
 interface User {
   id: string;
@@ -95,7 +95,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const UserManagement: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);

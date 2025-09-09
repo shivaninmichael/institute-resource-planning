@@ -47,8 +47,8 @@ import MoreIcon from '@mui/icons-material/MoreVert';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { useAuth } from '../../contexts/AuthContext';
-import { facultyApi } from '../../services/api';
+import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
+import { supabase } from '../../services/supabase';
 
 interface Assignment {
   id: string;
@@ -106,7 +106,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const FacultyAssignments: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('all');

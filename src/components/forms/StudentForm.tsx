@@ -23,8 +23,8 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useForm, Controller } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { studentApi, commonApi } from '../../services/api';
+import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
+import { supabase } from '../../services/supabase';
 import { Student, StudentCreateRequest, Country, State, Category } from '../../types';
 
 interface StudentFormData extends Omit<StudentCreateRequest, 'birth_date'> {
@@ -36,7 +36,7 @@ export const StudentForm: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { hasPermission } = useAuth();
+  const { hasPermission } = useSupabaseAuth();
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
